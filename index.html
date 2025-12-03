@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Ticketing System - Admin Only</title>
+    <title>Event Ticketing System</title>
     
     <style>
         :root {
@@ -1186,14 +1186,29 @@
             document.getElementById('whatsappBtn').disabled = false;
         }
 
-        // WhatsApp Share
+        // WhatsApp Share / Download Logic with Unique Filename
         document.getElementById('whatsappBtn').addEventListener('click', () => {
             const ticketTemplate = document.getElementById('ticketTemplate');
             html2canvas(ticketTemplate, { scale: 3 }).then(canvas => {
+                // Generate ddmmyyyyhhmmss timestamp
+                const now = new Date();
+                const pad = (num) => String(num).padStart(2, '0');
+                
+                const dd = pad(now.getDate());
+                const mm = pad(now.getMonth() + 1); // Month is 0-indexed
+                const yyyy = now.getFullYear(); // Full Year (4 digits)
+                const hh = pad(now.getHours());
+                const min = pad(now.getMinutes());
+                const ss = pad(now.getSeconds());
+                
+                const timestamp = `${dd}${mm}${yyyy}${hh}${min}${ss}`;
+                
                 const link = document.createElement('a');
-                link.download = `ticket.png`;
+                link.download = `ticket-${timestamp}.png`; // Unique filename
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+                
+                // WhatsApp URL
                 const phone = document.getElementById('ticketPhone').textContent.replace('+', '');
                 const name = document.getElementById('ticketName').textContent;
                 const message = encodeURIComponent(`Hello ${name}, here is your event ticket.\n*_[Keep this QR code safe for entry!]_*`);

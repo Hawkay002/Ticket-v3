@@ -18,14 +18,17 @@ Why this stands out:
    * Auto-downloads the file to the device.
    * Redirects to Guest's WhatsApp number with a pre-filled message.
    * Auto-Resets the form for rapid-fire entry of the next guest.
+
 📸 Advanced Entry Scanner
  * Browser-Native: Uses the device camera directly (no app download needed).
  * Audio Feedback Engine:
    * Success: Plays a cheerful beep when a valid guest arrives.
    * Error: Plays a buzzer for duplicates or invalid codes.
  * Status Tracking: Prevents double-entry by marking used tickets as "Arrived" instantly across all devices.
+
 📱 Responsive & Robust
  * Cross-Device: Works perfectly on Laptops (Desk Agents) and Mobile Phones (Security/Bouncers).
+
 🛠️ Installation & Setup
 Prerequisites
  * A Google/Firebase Account.
@@ -37,12 +40,12 @@ git clone https://github.com/Hawkay002/Ticket-backend.git
 cd Ticket-backend
 ```
    * Step 2: Firebase Configuration
- * Go to Firebase Console.
- * Create a project and register a Web App (</>).
- * Database: Create a Firestore Database in "Test Mode".
- * Auth: Enable Email/Password authentication.
- * Users: Manually add your admin email/password in the Firebase Console (Users tab).
-   * Note: The app code has public registration disabled for security.
+     * Go to Firebase Console.
+     * Create a project and register a Web App (</>).
+     * Database: Create a Firestore Database in "Test Mode".
+     * Auth: Enable Email/Password authentication.
+     * Users: Manually add your admin email/password in the Firebase Console (Users tab).
+       * Note: The app code has public registration disabled for security.
 * Step 3: Link the Code
 Open index.html and find the configuration section. Replace it with your keys:
 ```js
@@ -55,9 +58,10 @@ const firebaseConfig = {
 ```
    * Step 4: Add Custom Sounds (Optional)
 To enable premium audio feedback, add these two files to your root folder (next to index.html):
- * success.mp3 – Plays on valid entry.
- * error.mp3 – Plays on invalid/duplicate entry.
+     * success.mp3 – Plays on valid entry.
+     * error.mp3 – Plays on invalid/duplicate entry.
 (If these files are missing, the system will automatically fall back to generated electronic beeps).
+
 🚀 How to Use
 1. The Dashboard (Desk Agent)
  * Log in securely using your Admin credentials.
@@ -75,15 +79,19 @@ To enable premium audio feedback, add these two files to your root folder (next 
 3. Management
  * Go to "Guest List" to see real-time attendance stats.
  * Use "Configuration" to change the Event Name or Location instantly for all tickets.
+
 📂 Project Structure
-/
-├── index.html       # The complete app (Logic + UI + CSS)
-├── success.mp3      # (Optional) Custom success sound
-├── error.mp3        # (Optional) Custom error sound
-└── README.md        # Documentation
+```
+Ticket-backend/
+├── index.html       # Main application file (HTML + CSS + JS)
+├── success.mp3      # (Optional) Audio file for valid scan
+├── error.mp3        # (Optional) Audio file for invalid scan
+└── README.md        # Project documentation
+```
 
 🛡️ Security
  * Authentication: Locked to manually created accounts only. No "Sign Up" button for the public.
  * Data Isolation: Data is stored under specific user collections in Firestore.
+
 📄 License
 Distributed under the MIT License.

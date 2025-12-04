@@ -54,7 +54,7 @@ This is a serverless, single-file web application designed for exclusive events.
 
 ### Step 1: Clone the Repository
 ```bash
-git clone [https://github.com/Hawkay002/Ticket-backend.git](https://github.com/Hawkay002/Ticket-backend.git)
+git clone https://github.com/Hawkay002/Ticket-backend.git
 cd Ticket-backend
 ```
 

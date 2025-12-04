@@ -919,7 +919,7 @@
                 setTimeout(() => {
                     const phone = document.getElementById('ticketPhone').textContent.replace(/\D/g,'');
                     const name = document.getElementById('ticketName').textContent;
-                    const message = encodeURIComponent(`Hello ${name}, here is your VIP Entry Pass.\n(Please attach the downloaded ticket image here)\n*Keep this QR code ready at the entrance.*`);
+                    const message = encodeURIComponent(`Hello ${name}, here is your VIP Entry Pass.\n*Keep this QR code ready at the entrance.*`);
                     
                     // Use location.href to bypass pop-up blockers on mobile
                     window.location.href = `https://wa.me/${phone}?text=${message}`;

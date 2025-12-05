@@ -200,12 +200,25 @@
                                 <i class="fa-solid fa-filter"></i> Filter / Sort
                             </button>
                             <div id="filterDropdown" class="filter-dropdown">
+                                <!-- Status Filter -->
                                 <div class="dropdown-header">Filter Status</div>
                                 <div class="dropdown-item selected" data-type="filter" data-val="all">All Guests</div>
                                 <div class="dropdown-item" data-type="filter" data-val="arrived">Arrived Only</div>
                                 <div class="dropdown-item" data-type="filter" data-val="coming-soon">Coming Soon</div>
                                 <div class="dropdown-item" data-type="filter" data-val="absent">Absent</div>
+                                
                                 <div class="dropdown-divider"></div>
+
+                                <!-- Gender Filter -->
+                                <div class="dropdown-header">Filter Gender</div>
+                                <div class="dropdown-item selected" data-type="filter-gender" data-val="all">All Genders</div>
+                                <div class="dropdown-item" data-type="filter-gender" data-val="Male">Male Only</div>
+                                <div class="dropdown-item" data-type="filter-gender" data-val="Female">Female Only</div>
+                                <div class="dropdown-item" data-type="filter-gender" data-val="Other">Other</div>
+
+                                <div class="dropdown-divider"></div>
+
+                                <!-- Sort Order -->
                                 <div class="dropdown-header">Sort Order</div>
                                 <div class="dropdown-item selected" data-type="sort" data-val="newest">Newest First</div>
                                 <div class="dropdown-item" data-type="sort" data-val="oldest">Oldest First</div>
@@ -213,6 +226,7 @@
                                 <div class="dropdown-item" data-type="sort" data-val="name-desc">Name (Z-A)</div>
                                 <div class="dropdown-item" data-type="sort" data-val="age-asc">Age (Youngest)</div>
                                 <div class="dropdown-item" data-type="sort" data-val="age-desc">Age (Oldest)</div>
+                                <div class="dropdown-item" data-type="sort" data-val="gender">Gender (Grouped)</div>
                             </div>
                         </div>
                     </div>

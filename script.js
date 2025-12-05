@@ -81,6 +81,7 @@ const loadingScreen = document.getElementById('loading-screen');
 const appContent = document.getElementById('appContent');
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');
+const togglePassword = document.getElementById('togglePassword');
 const loginButton = document.getElementById('loginButton');
 const authError = document.getElementById('auth-error');
 const userEmailDisplay = document.getElementById('userEmailDisplay');
@@ -109,6 +110,16 @@ const filterDropdown = document.getElementById('filterDropdown');
 
 // Refresh Icon
 const refreshStatusIndicator = document.getElementById('refreshStatusIndicator');
+
+// --- PASSWORD TOGGLE LOGIC ---
+if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+}
 
 // --- REFRESH / SYNC LOGIC ---
 async function performSync() {

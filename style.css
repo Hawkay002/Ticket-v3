@@ -473,6 +473,13 @@ header h1 {
     border-radius: 50%;
     display: inline-block;
     box-shadow: 0 0 10px #10b981;
+    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth color transition */
+}
+
+/* OFFLINE STATE FOR RED DOT */
+.sync-dot.offline {
+    background-color: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
 }
 
 nav {

@@ -290,9 +290,18 @@ function showError(msg) {
     loginButton.disabled = false;
 }
 
-logoutBtn.addEventListener('click', () => {
-    signOut(auth);
-    window.location.reload();
+// ------------------------------------------------------------------
+// UPDATED: Await signOut to ensure session clears before reload
+// ------------------------------------------------------------------
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await signOut(auth);
+        window.location.reload();
+    } catch (error) {
+        console.error("Logout failed", error);
+        // Fallback reload if signOut errors (rare)
+        window.location.reload();
+    }
 });
 
 if (togglePassword && passwordInput) {

@@ -76,7 +76,6 @@
         <div class="modal-box" style="border: 1px solid #ef4444; box-shadow: 0 20px 60px rgba(239, 68, 68, 0.2);">
             <h3 style="color: #ef4444;">⚠ DANGER ZONE</h3>
             <p>This will <strong>PERMANENTLY ERASE</strong> all tickets, settings, and lock configurations.</p>
-            <!-- Hint removed as requested -->
             
             <div class="password-wrapper">
                 <input type="password" id="factoryResetPasswordInput" class="premium-input" placeholder="Enter Reset Password" style="text-align: center; border-color: #ef4444;">
@@ -87,6 +86,30 @@
                 <button id="cancelFactoryReset" class="modal-btn secondary">Cancel</button>
                 <button id="confirmFactoryReset" class="modal-btn danger" style="background: #ef4444;">NUKE DATABASE</button>
             </div>
+        </div>
+    </div>
+
+    <!-- NEW: USERNAME GATEKEEPER MODAL -->
+    <div id="username-gatekeeper-modal" class="modal-overlay" style="z-index: 2500; background: var(--bg-deep); display: none;">
+        <div class="modal-box" style="border: 1px solid var(--accent-secondary); box-shadow: 0 0 50px rgba(59, 130, 246, 0.1);">
+            <h3 style="color: var(--accent-secondary); margin-bottom: 10px;">Identity Verification</h3>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 25px;">
+                Authentication successful. Please enter your unique staff <strong>Username</strong> to access the dashboard.
+            </p>
+            
+            <input type="text" id="gatekeeperUsernameInput" class="premium-input" placeholder="e.g. john_doe" style="text-align: center; font-weight: bold; letter-spacing: 1px;">
+            
+            <button id="gatekeeperSubmitBtn" class="premium-btn" style="background: var(--accent-secondary); color: white; border: none; margin-top: 15px;">
+                Verify Identity
+            </button>
+            
+            <div id="gatekeeper-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none;">
+                Username not found. Contact Admin.
+            </div>
+            
+            <button id="gatekeeperLogoutBtn" class="premium-btn" style="background: transparent; color: #666; border: 1px solid #333; margin-top: 10px; font-size: 0.8rem; padding: 10px; width: 100%;">
+                Cancel & Sign Out
+            </button>
         </div>
     </div>
 
@@ -193,7 +216,7 @@
             <h1>Ticketing<span style="font-weight: 600;">System</span>.</h1>
             <div class="user-info-bar">
                 <span class="sync-dot"></span>
-                <span id="syncText">Connected as <span id="userEmailDisplay" style="color: white; font-weight: 500;">...</span></span>
+                <span id="syncText">User: <span id="userEmailDisplay" style="color: var(--accent-secondary); font-weight: 600;">...</span></span>
                 <button id="logoutBtn" class="logout-btn">Sign Out</button>
             </div>
 

@@ -63,7 +63,10 @@ let currentLockData = null; // NEW: Store fetched lock data for selected user
 
 // Logs State
 let allActivityLogs = [];
+let currentFilteredLogs = []; // NEW: For Select All logic
 let currentLogFilter = 'all';
+let isLogSelectionMode = false; // NEW: Track log selection mode
+let selectedLogIds = new Set(); // NEW: Store selected log IDs
 
 // UI State
 let searchTerm = '';
@@ -148,6 +151,12 @@ const searchLogsInput = document.getElementById('searchLogsInput');
 const filterLogsTypeBtn = document.getElementById('filterLogsTypeBtn');
 const filterLogsDropdown = document.getElementById('filterLogsDropdown');
 const activityLogsTable = document.getElementById('activityLogsTable');
+// NEW LOGS CONTROLS
+const selectLogsBtn = document.getElementById('selectLogsBtn');
+const deleteLogsBtn = document.getElementById('deleteLogsBtn');
+const selectAllLogsCheckbox = document.getElementById('selectAllLogsCheckbox');
+const logsSelectAllContainer = document.querySelector('.logs-select-all-container');
+const logsSelectionCountSpan = document.getElementById('logsSelectionCount');
 
 // Selection & Export
 const selectBtn = document.getElementById('selectBtn');
@@ -171,12 +180,19 @@ const ticketViewModal = document.getElementById('ticket-view-modal');
 const closeTicketModal = document.getElementById('closeTicketModal');
 const modalWhatsAppBtn = document.getElementById('modalWhatsAppBtn');
 
-// Delete Modal
+// Delete Modal (Tickets)
 const confirmModal = document.getElementById('confirm-modal');
 const deleteCountSpan = document.getElementById('delete-count');
 const cancelDeleteBtn = document.getElementById('cancelDelete');
 const confirmDeleteBtn = document.getElementById('confirmDelete');
 let pendingDeleteIds = [];
+
+// Delete Modal (Logs)
+const confirmLogDeleteModal = document.getElementById('confirm-log-delete-modal');
+const deleteLogCountSpan = document.getElementById('delete-log-count');
+const cancelLogDeleteBtn = document.getElementById('cancelLogDelete');
+const confirmLogDeleteBtn = document.getElementById('confirmLogDelete');
+let pendingLogDeleteIds = [];
 
 // Contact Tray
 const contactTray = document.getElementById('contactTray');
@@ -1913,11 +1929,11 @@ if (searchLogsInput) {
 
 async function fetchAndRenderLogs() {
     if(!currentUser) return;
-    activityLogsTable.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">Syncing logs...</td></tr>';
+    activityLogsTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#666;">Syncing logs...</td></tr>';
     
     try {
         // Fetch last 50 logs
-        const q = query(collection(db, 'activity_logs'), orderBy('timestamp', 'desc'), limit(50));
+        const q = query(collection(db, 'activity_logs'), orderBy('timestamp', 'desc'));
         const snapshot = await getDocs(q);
         
         allActivityLogs = [];
@@ -1929,14 +1945,101 @@ async function fetchAndRenderLogs() {
         
     } catch (e) {
         console.error("Error fetching logs:", e);
-        activityLogsTable.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#ef4444;">Error loading logs. Check permissions.</td></tr>';
+        activityLogsTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">Error loading logs. Check permissions.</td></tr>';
     }
 }
+
+function updateLogSelectionCount() {
+    const count = selectedLogIds.size;
+    if (logsSelectionCountSpan) logsSelectionCountSpan.textContent = `(${count} selected)`;
+    
+    if (deleteLogsBtn) deleteLogsBtn.disabled = count === 0;
+
+    const allVisibleSelected = currentFilteredLogs.length > 0 && 
+                               currentFilteredLogs.every(l => selectedLogIds.has(l.id));
+    
+    if(currentFilteredLogs.length === 0) selectAllLogsCheckbox.checked = false;
+    else selectAllLogsCheckbox.checked = allVisibleSelected;
+}
+
+// Toggle Selection Mode
+selectLogsBtn.addEventListener('click', () => {
+    isLogSelectionMode = !isLogSelectionMode;
+    deleteLogsBtn.style.display = isLogSelectionMode ? 'inline-block' : 'none';
+    logsSelectAllContainer.style.display = isLogSelectionMode ? 'flex' : 'none';
+    selectLogsBtn.textContent = isLogSelectionMode ? 'Cancel' : 'Select';
+    if(!isLogSelectionMode) {
+        selectedLogIds.clear();
+        selectAllLogsCheckbox.checked = false;
+        updateLogSelectionCount();
+    }
+    renderLogsTable();
+});
+
+// Select All Logic
+selectAllLogsCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    currentFilteredLogs.forEach(l => {
+        if(isChecked) selectedLogIds.add(l.id);
+        else selectedLogIds.delete(l.id);
+    });
+    renderLogsTable();
+    updateLogSelectionCount();
+});
+
+// Delete Logic
+deleteLogsBtn.addEventListener('click', () => {
+    const selectedIds = Array.from(selectedLogIds);
+    if(selectedIds.length === 0) return alert('Select logs to delete');
+    pendingLogDeleteIds = selectedIds;
+    deleteLogCountSpan.textContent = selectedIds.length;
+    confirmLogDeleteModal.style.display = 'flex';
+});
+
+cancelLogDeleteBtn.addEventListener('click', () => {
+    confirmLogDeleteModal.style.display = 'none';
+    pendingLogDeleteIds = [];
+});
+
+confirmLogDeleteBtn.addEventListener('click', async () => {
+    if (!navigator.onLine) return showToast("Offline", "Cannot delete logs while offline.");
+    if(pendingLogDeleteIds.length > 0) {
+        confirmLogDeleteBtn.textContent = "Deleting...";
+        try {
+            for(const id of pendingLogDeleteIds) {
+                await deleteDoc(doc(db, 'activity_logs', id));
+            }
+            
+            // Log the log deletion (Meta!)
+            logAction("LOG_DELETE", `Admin deleted ${pendingLogDeleteIds.length} activity records.`);
+
+            // Refresh UI
+            allActivityLogs = allActivityLogs.filter(l => !selectedLogIds.has(l.id));
+            
+            showToast("Logs Deleted", `Removed ${pendingLogDeleteIds.length} entries.`);
+            
+        } catch(e) {
+            console.error("Delete logs error:", e);
+            alert("Error deleting logs. Check permissions.");
+        } finally {
+            confirmLogDeleteModal.style.display = 'none';
+            confirmLogDeleteBtn.textContent = "Delete";
+            pendingLogDeleteIds = [];
+            selectedLogIds.clear(); 
+            selectLogsBtn.click(); // Exit selection mode
+        }
+    }
+});
+
 
 function renderLogsTable() {
     const term = searchLogsInput.value.toLowerCase().trim();
     
-    const filtered = allActivityLogs.filter(log => {
+    // Checkbox Header Visibility
+    const headerCheck = document.querySelector('.log-check-header');
+    if(headerCheck) headerCheck.style.display = isLogSelectionMode ? 'table-cell' : 'none';
+
+    currentFilteredLogs = allActivityLogs.filter(log => {
         // Filter Type
         if (currentLogFilter !== 'all' && log.action !== currentLogFilter) return false;
         
@@ -1949,13 +2052,16 @@ function renderLogsTable() {
     
     activityLogsTable.innerHTML = '';
     
-    if (filtered.length === 0) {
-        activityLogsTable.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No matching records found.</td></tr>';
+    if (currentFilteredLogs.length === 0) {
+        activityLogsTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#666;">No matching records found.</td></tr>';
         return;
     }
     
-    filtered.forEach(log => {
+    const checkboxDisplayStyle = isLogSelectionMode ? 'table-cell' : 'none';
+
+    currentFilteredLogs.forEach(log => {
         const tr = document.createElement('tr');
+        tr.dataset.id = log.id;
         
         // Format Time
         const dateObj = new Date(log.timestamp);
@@ -1964,13 +2070,28 @@ function renderLogsTable() {
         // Action Badge Class
         const badgeClass = `log-action-${log.action}` in getClassMap() ? `log-action-${log.action}` : 'log-action-DEFAULT';
         
+        const isChecked = selectedLogIds.has(log.id) ? 'checked' : '';
+
         tr.innerHTML = `
+            <td style="display: ${checkboxDisplayStyle}; text-align: center;">
+                <input type="checkbox" class="log-checkbox" style="transform: scale(1.2);" ${isChecked}>
+            </td>
             <td style="font-size: 0.8rem; color: #888; white-space: nowrap;">${dateStr}</td>
             <td style="font-weight: 500; color: white;">${log.username}</td>
             <td><span class="log-action-badge ${badgeClass}">${log.action.replace('_', ' ')}</span></td>
             <td style="font-size: 0.85rem; color: #ccc;">${log.details}</td>
         `;
         activityLogsTable.appendChild(tr);
+    });
+
+    // Add Checkbox Listeners
+    document.querySelectorAll('.log-checkbox').forEach(box => {
+        box.addEventListener('change', (e) => {
+            const rowId = e.target.closest('tr').dataset.id;
+            if(e.target.checked) selectedLogIds.add(rowId);
+            else selectedLogIds.delete(rowId);
+            updateLogSelectionCount();
+        });
     });
 }
 
@@ -1985,7 +2106,8 @@ function getClassMap() {
         // NEW RED ACTIONS
         'log-action-TICKET_DELETE': true,
         'log-action-FACTORY_RESET': true,
-        'log-action-LOCK_ACTION': true
+        'log-action-LOCK_ACTION': true,
+        'log-action-LOG_DELETE': true
     };
 }
 

@@ -925,16 +925,32 @@ td {
 }
 
 /* ACTIVITY LOGS TABLE SPECIFIC WIDTHS */
-#activityLogsTable tr td:nth-child(2), /* User */
-#activityLogsTable tr td:nth-child(3) { /* Action */
+/* Checkbox is col 1 (when visible), Timestamp col 2, User col 3, Action col 4, Details col 5 */
+
+/* Targeting User (col 3) and Action (col 4) for shrinking */
+#activityLogsTable tr td:nth-child(3), 
+#activityLogsTable tr td:nth-child(4) { 
     width: 1%;
     white-space: nowrap;
 }
 
-#activityLogsTable tr td:nth-child(4) { /* Details */
+/* Timestamp (col 2) */
+#activityLogsTable tr td:nth-child(2) {
+    width: 160px;
+    white-space: nowrap;
+}
+
+/* Details (col 5) */
+#activityLogsTable tr td:nth-child(5) {
     white-space: normal; /* Allow wrapping */
     word-break: break-word; /* Prevent overflow */
     min-width: 250px;
+}
+
+/* Checkbox Column (col 1) */
+#activityLogsTable tr td:nth-child(1) {
+    width: 40px;
+    text-align: center;
 }
 
 tr:last-child td {
@@ -1280,6 +1296,18 @@ tr:hover td {
 .close-modal-btn:hover {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+}
+
+/* NEW: Shared style for Selection Bars */
+.select-all-container,
+.logs-select-all-container {
+    display: none;
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    margin-bottom: 15px;
+    border-radius: 8px;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* ========================================= */

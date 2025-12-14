@@ -1036,10 +1036,26 @@ tr:hover td {
 .log-action-TICKET_DELETE,
 .log-action-FACTORY_RESET,
 .log-action-LOCK_ACTION,
-.log-action-LOG_DELETE { /* Added this for Log Deletion events */
+.log-action-LOG_DELETE { 
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
     border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* RAINBOW ACTION FOR EXPORT */
+.log-action-EXPORT_DATA {
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #ef4444);
+    background-size: 200% 200%;
+    color: white;
+    border: none;
+    animation: gradientMove 3s linear infinite;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
 }
 
 .log-action-DEFAULT {
@@ -1538,4 +1554,4 @@ tr:hover td {
     top: auto;
     bottom: 100%;
     border-color: transparent transparent #222 transparent;
-}
+    }

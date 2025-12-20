@@ -480,6 +480,11 @@ function setupAdminPanel() {
             });
             managedUsersDeviceCache[user.email] = deviceData;
             renderManagedUsersList();
+            
+            // NEW: If the user currently selected in the config panel is updated, re-render usernames
+            if (selectedUserForConfig === user.email) {
+                 fetchAndRenderUsernames(user.email);
+            }
         });
         adminPresenceUnsubscribes.push(unsub);
     });
@@ -542,8 +547,20 @@ function renderManagedUsersList() {
         
         let statusText = 'Offline';
         if (isOnline) {
-            const userList = Array.from(activeUsernames).join(', ');
-            statusText = `<span class="status-dot-pulse"></span>Online: ${userList || 'Unknown'}`;
+            const count = activeUsernames.size;
+            statusText = `
+                <span class="status-dot-pulse"></span>
+                <span>${count} Active</span>
+            `;
+        } else {
+            const lastSeenTime = Math.max(...deviceData.map(d => d.lastSeen || 0));
+            if (lastSeenTime > 0) {
+                const diff = now - lastSeenTime;
+                const timeStr = diff < 3600000 
+                    ? Math.floor(diff / 60000) + 'm ago' 
+                    : Math.floor(diff / 3600000) + 'h ago';
+                statusText = `Offline <span style="font-size:0.7em; opacity:0.6; margin-left:3px;">(${timeStr})</span>`;
+            }
         }
 
         const newClass = isOnline ? 'online' : '';
@@ -591,7 +608,10 @@ window.selectUserForConfig = async function(email) {
 };
 
 async function fetchAndRenderUsernames(email) {
-    usernameListContainer.innerHTML = '<span style="color:#666; font-size: 0.8rem;">Loading associated usernames...</span>';
+    // Note: We don't wipe the container immediately to prevent flashing if re-called by realtime listener
+    if (!usernameListContainer.hasChildNodes()) {
+         usernameListContainer.innerHTML = '<span style="color:#666; font-size: 0.8rem;">Loading associated usernames...</span>';
+    }
     
     try {
         const q = query(collection(db, 'allowed_usernames'), where('email', '==', email));
@@ -604,12 +624,58 @@ async function fetchAndRenderUsernames(email) {
             return;
         }
 
+        // --- Calculate Online Users ---
+        const now = Date.now();
+        const deviceData = managedUsersDeviceCache[email] || [];
+        const onlineUsernames = new Set();
+        
+        deviceData.forEach(d => {
+            if (now - d.lastSeen < 30000) { // 30s threshold
+                if (d.username && d.username !== 'unknown') {
+                    onlineUsernames.add(d.username);
+                }
+            }
+        });
+
+        // --- Collect, Sort, then Render ---
+        let userArray = [];
+        
         querySnapshot.forEach((doc) => {
-            const username = doc.id;
+            userArray.push({
+                username: doc.id,
+                isOnline: onlineUsernames.has(doc.id)
+            });
+        });
+        
+        // SORT: Online first, then alphabetical
+        userArray.sort((a, b) => {
+            // If status is different, prioritize Online (true) over Offline (false)
+            if (a.isOnline !== b.isOnline) {
+                return a.isOnline ? -1 : 1; 
+            }
+            // If status is same, sort alphabetically
+            return a.username.localeCompare(b.username);
+        });
+
+        // RENDER Sorted List
+        userArray.forEach(userObj => {
+            const { username, isOnline } = userObj;
+            
             const chip = document.createElement('div');
-            chip.className = 'username-chip';
+            
+            // Apply base class + online class if active
+            chip.className = `username-chip ${isOnline ? 'online' : ''}`;
+            
+            // Re-apply selected state if it was already selected in memory
+            if (selectedUsernamesForLock.has(username)) {
+                chip.classList.add('selected');
+            }
+
             chip.dataset.username = username;
-            chip.innerHTML = `<i 8="fa-solid fa-user"></i> ${username}`;
+            
+            const iconClass = isOnline ? 'fa-solid fa-user-check' : 'fa-solid fa-user';
+            
+            chip.innerHTML = `<i class="${iconClass}"></i> ${username}`;
             
             chip.addEventListener('click', () => {
                 if (selectedUsernamesForLock.has(username)) {
@@ -620,7 +686,7 @@ async function fetchAndRenderUsernames(email) {
                     chip.classList.add('selected');
                 }
                 
-                // NEW LOGIC: If single user selected, auto-check their locked tabs
+                // If single user selected, auto-check their locked tabs
                 if (selectedUsernamesForLock.size === 1 && currentLockData && currentLockData.userSpecificLocks) {
                     const [singleUser] = selectedUsernamesForLock;
                     const locks = currentLockData.userSpecificLocks[singleUser] || [];
@@ -629,7 +695,6 @@ async function fetchAndRenderUsernames(email) {
                         cb.checked = locks.includes(cb.value);
                     });
                 } else {
-                    // Multiple or none: clear boxes to avoid confusion (or keep as is, but clearing is safer for bulk)
                     remoteLockCheckboxes.forEach(cb => cb.checked = false);
                 }
 

@@ -1735,6 +1735,8 @@ function startScan() {
             scanResult.style.background = 'rgba(255,255,255,0.1)';
             scanResult.style.color = 'white';
             scanResult.textContent = 'Searching for QR Code...';
+            // NEW: Ensure result is fully visible (not faded) when starting
+            scanResult.classList.remove('hiding-result');
             requestAnimationFrame(tick);
         }).catch(err => {
             alert("Camera error: " + err);
@@ -1757,13 +1759,30 @@ function tick() {
         ctx.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+        
+        // --- MODIFIED COOLDOWN LOGIC START ---
         if(code && !isCooldown) {
             isCooldown = true;
+            
+            // 1. Reset visual state to visible (just in case)
+            scanResult.classList.remove('hiding-result'); 
+            
+            // 2. Validate Ticket (updates text/color)
             validateTicket(code.data);
+            
+            // 3. Wait 3 seconds, then start fade out
             setTimeout(() => {
-                isCooldown = false;
-            }, 1500);
+                scanResult.classList.add('hiding-result');
+            }, 3000);
+
+            // 4. Wait total 4 seconds (3s hold + 1s fade), then hide completely and unlock
+            setTimeout(() => {
+                scanResult.style.display = 'none';
+                scanResult.classList.remove('hiding-result'); // Reset for next time
+                isCooldown = false; // Unlock
+            }, 4000);
         }
+        // --- MODIFIED COOLDOWN LOGIC END ---
     }
     if (scannerVideo.srcObject) {
         requestAnimationFrame(tick);
@@ -1772,37 +1791,66 @@ function tick() {
 
 async function validateTicket(ticketId) {
     if (!navigator.onLine) return showToast("Offline", "Cannot validate tickets while offline.");
+    
+    // Normalize ID if needed, though usually exact match
     const ticket = bookedTickets.find(t => t.id === ticketId);
+    
     scanResult.style.display = 'block';
+    
+    // Clear previous classes/styles to ensure clean state
+    scanResult.className = ''; 
+    // Re-add potentially needed classes if any (none in original except hiding-result which is managed by tick)
     
     if(ticket) {
         if(ticket.status === 'coming-soon' && !ticket.scanned) {
+            // SUCCESS
             await updateDoc(doc(db, APP_COLLECTION_ROOT, SHARED_DATA_ID, 'tickets', ticketId), {
                 status: 'arrived',
                 scanned: true,
                 scannedAt: Date.now(),
-                scannedBy: currentUsername || 'Admin' // NEW: Store who scanned it
+                scannedBy: currentUsername || 'Admin' 
             });
             
-            // LOGGING UPDATED: Explicitly state scanner
             logAction("SCAN_ENTRY", `Scanned by ${currentUsername || 'Admin'}: Guest ${ticket.name} (ID: ${ticketId.substring(0,6)})`);
 
             scanResult.style.background = 'rgba(16, 185, 129, 0.2)';
             scanResult.style.color = '#10b981';
             scanResult.style.border = '1px solid #10b981';
-            scanResult.textContent = `✅ ACCESS GRANTED: ${ticket.name}`;
+            // Using innerHTML to format the ID on a new line easily
+            scanResult.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: bold;">✅ ACCESS GRANTED</div>
+                <div style="color: white; margin-top: 5px;">${ticket.name}</div>
+                <div style="font-size: 0.8rem; color: #ccc; margin-top: 2px;">ID: ${ticket.id}</div>
+            `;
             playBeep();
         } else {
-            scanResult.style.background = 'rgba(239, 68, 68, 0.2)';
-            scanResult.style.color = '#ef4444';
-            scanResult.style.border = '1px solid #ef4444';
-            scanResult.textContent = `❌ DENIED: Already Scanned or Invalid Status`;
+            // ALREADY SCANNED / WRONG STATUS
+            // Orange/Yellow for warning
+            scanResult.style.background = 'rgba(245, 158, 11, 0.2)'; // Amber-500 equivalent
+            scanResult.style.color = '#f59e0b';
+            scanResult.style.border = '1px solid #f59e0b';
+            
+            let statusText = ticket.scanned ? "ALREADY SCANNED" : "INVALID STATUS";
+            
+            scanResult.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: bold;">⚠️ ${statusText}</div>
+                <div style="color: white; margin-top: 5px;">${ticket.name}</div>
+                <div style="font-size: 0.8rem; color: #ccc; margin-top: 2px;">ID: ${ticket.id}</div>
+                <div style="font-size: 0.75rem; color: #aaa; margin-top: 2px;">Current Status: ${ticket.status}</div>
+            `;
             playError();
         }
     } else {
+        // INVALID TICKET ID
         scanResult.style.background = 'rgba(239, 68, 68, 0.2)';
         scanResult.style.color = '#ef4444';
-        scanResult.textContent = `❌ DENIED: Invalid Ticket ID`;
+        scanResult.style.border = '1px solid #ef4444';
+        
+        scanResult.innerHTML = `
+            <div style="font-size: 1.1rem; font-weight: bold;">❌ INVALID TICKET</div>
+            <div style="font-size: 0.8rem; color: #ccc; margin-top: 5px;">ID: ${ticketId}</div>
+            <div style="font-size: 0.75rem; color: #aaa; margin-top: 2px;">Not found in database</div>
+        `;
         playError();
     }
 }

@@ -1590,3 +1590,13 @@ tr:hover td {
     bottom: 100%;
     border-color: transparent transparent #222 transparent;
 }
+
+/* SCANNER RESULT FADE TRANSITION */
+#scanResult {
+    transition: opacity 1s ease-in-out;
+    opacity: 1;
+}
+
+#scanResult.hiding-result {
+    opacity: 0;
+}
